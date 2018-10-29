@@ -28,7 +28,7 @@
 </dependency>
 ```
 
-4. 在mybatis-config.xml文件中加入以下配置：
+4. 在 mybatis-config.xml 文件中加入以下配置：
 ```
 <plugins>
     <plugin interceptor="com.github.itsoo.plugin.PagePlugin">
@@ -43,7 +43,7 @@
 ```
 
 5. 在你需要使用分页的逻辑中进行如下配置：
-service实现层中加入 @Page 注解（注解放置在方法前）例如：
+service 实现层中加入 @Page 注解（注解放置在方法前）例如：
 ```
 @Page
 public Object query(Map<String, Object> param) {
