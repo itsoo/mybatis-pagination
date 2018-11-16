@@ -8,18 +8,18 @@
 * 依赖非常少：仅仅 spring-context、mybatis 和 aspectj。
 * 代码侵入性极小：仅需一个注解（非必须）和正则表达式。
 * 业务逻辑方法前加入 @Page 注解即可得到封装好的 Map 类型的 page。
-* 不加入 @Page 的可得到物理分页后的集合数据。
+* 不加入 @Page 注解的可得到物理分页后的集合数据（List 类型返回值）。
 
 ## 原理
 
-插件通过实现 MyBatis 的 Interceptor 拦截，来实现物理分页 SQL 的组织。并通过注解来拦截方法入参和返回值，业务处理后改写方法返回值（封装的 PageInfo 类型），PageInfo 中主要属性：pageNum，pageSize，totalPage，totalCount，dataList，hasPrePage，hasNextPage
+插件通过实现 MyBatis 的 Interceptor 拦截，来实现物理分页 SQL 的组织。并通过注解来拦截方法入参和返回值，业务处理后改写方法返回值（封装的 PageInfo 类型），PageInfo 中主要属性：pageNum、pageSize、totalPage、totalCount、dataList、hasPrePage、hasNextPage。
 
 ### 使用方法
 1. 确保你的工程为 Maven 工程，且集成了 Spring 和 MyBatis。
 
 2. 在你的工程 lib 中加入 source 下的 jar 包。
 
-3. 在 pom.xml 中加入引用 jar 配置：
+3. 在 pom.xml 中加入引用 jar 配置（当然你也可以编译后打 jar 包直接引入）：
 ```
 <dependency>
     <groupId>com.github.itsoo</groupId>
