@@ -34,7 +34,7 @@
     <plugin interceptor="com.github.itsoo.plugin.PagePlugin">
         <!-- 数据库方言 必须项 -->
         <property name="dialect" value="oracle"/>
-        <!-- 拦截分页SQL正则 必须项 -->
+        <!-- 拦截分页 SQL 正则 必须项 -->
         <property name="regexp" value=".*ListPage.*"/>
         <!-- 默认每页条目数（非必须 默认值 10） -->
         <property name="pageSize" value="10"/>
@@ -54,7 +54,7 @@ public Object query(Map<String, Object> param) {
 6. 修改在需要分页的 sql 中 id 加入 ListPage 关键字（位置任意）例如：
 ```
 <select id="queryListPage" parameterType="HashMap" resultType="HashMap">
-    // 你的SQL语句
+    // 你的 SQL 语句
 </select>
 ```
 
