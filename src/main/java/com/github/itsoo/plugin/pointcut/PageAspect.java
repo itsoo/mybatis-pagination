@@ -1,7 +1,6 @@
 package com.github.itsoo.plugin.pointcut;
 
-import com.github.itsoo.plugin.PageInfo;
-import com.github.itsoo.plugin.ReflectHelper;
+import com.github.itsoo.plugin.toolkit.ReflectHelper;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -9,6 +8,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.github.itsoo.plugin.PageInfo.*;
 
 /**
  * 分页切面
@@ -24,51 +25,54 @@ public class PageAspect {
      *
      * @param point ProceedingJoinPoint
      * @return Object
+     * @throws Throwable Throwable
      */
     @Around("@annotation(com.github.itsoo.plugin.annotation.Page)")
     public Object around(ProceedingJoinPoint point) throws Throwable {
-        Map pageInfo = null;
         Object[] objects = point.getArgs();
-        Object obj;
-        // 入参下标
-        int index = -1;
-        // 遍历得到入参包含 pageNum 或 pageSize 属性容器
-        for (int i = 0, len = objects.length; i < len; i++) {
-            obj = objects[i];
-            // 参数为 Map 类型
-            if (obj instanceof Map) {
-                pageInfo = new HashMap((Map) obj);
-                if (hasKey4PageInfo(pageInfo)) {
-                    index = i;
-                    break;
-                }
-            } else { // 参数为其它 Bean
-                try {
-                    pageInfo = (Map) ReflectHelper.getValueByFieldName(obj, "page");
-                } catch (Exception e) {
-                    continue;
-                }
-                if (hasKey4PageInfo(pageInfo)) {
-                    index = i;
-                    break;
-                }
-            }
-        }
-        // 未得到分页参数的入参
+        // 分页参数索引
+        int index = getTargetIndex(point.getArgs());
+        // 未得到分页参数
         if (index == -1) {
-            for (int i = 0, len = objects.length; i < len; i++) {
-                obj = objects[i];
-                pageInfo = setPageInfo(point.proceed(), obj);
-                // 结束循环
-                if (null != pageInfo) {
-                    break;
+            Map<String, Object> pageInfo;
+            for (Object object : objects) {
+                pageInfo = handlePageInfo(point.proceed(), object);
+                if (pageInfo != null) {
+                    return pageInfo;
                 }
             }
-        } else {
-            obj = objects[index];
-            pageInfo = setPageInfo(point.proceed(), obj);
+
+            return null;
         }
-        return pageInfo;
+
+        return handlePageInfo(point.proceed(), objects[index]);
+    }
+
+    /**
+     * 获取入参包含 pageNum 或 pageSize 属性容器
+     *
+     * @param objects Object[]
+     * @return int
+     * @throws IllegalAccessException IllegalAccessException
+     */
+    @SuppressWarnings("unchecked")
+    private int getTargetIndex(Object[] objects) throws IllegalAccessException, NoSuchFieldException {
+        for (int i = 0, len = objects.length; i < len; i++) {
+            Object obj = objects[i];
+            if (obj instanceof Map) {
+                if (hasKeyOfPageInfo((Map) obj)) {
+                    return i;
+                }
+
+                continue;
+            }
+
+            if (hasKeyOfPageInfo((Map) ReflectHelper.getFieldValue(obj, PAGE))) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     /**
@@ -76,15 +80,15 @@ public class PageAspect {
      *
      * @param pageInfo Map
      */
-    private void removePageInfos(Map pageInfo) {
-        pageInfo.remove("pageNum");
-        pageInfo.remove("pageSize");
-        pageInfo.remove("totalPage");
-        pageInfo.remove("totalCount");
-        pageInfo.remove("hasPrePage");
-        pageInfo.remove("hasNextPage");
-        // 控制分页属性 ("false"不分页)
-        pageInfo.remove("pageList");
+    private void removePageInfos(Map<String, Object> pageInfo) {
+        pageInfo.remove(PAGE);
+        pageInfo.remove(PAGE_NUM);
+        pageInfo.remove(PAGE_SIZE);
+        pageInfo.remove(TOTAL_PAGE);
+        pageInfo.remove(TOTAL_COUNT);
+        pageInfo.remove(HAS_PRE_PAGE);
+        pageInfo.remove(HAS_NEXT_PAGE);
+        pageInfo.remove(PAGE_LIST);
     }
 
     /**
@@ -93,55 +97,62 @@ public class PageAspect {
      * @param pageInfo Map
      * @return boolean
      */
-    private boolean hasKey4PageInfo(Map pageInfo) {
-        return pageInfo != null && pageInfo.get("pageNum") != null;
+    private boolean hasKeyOfPageInfo(Map<String, Object> pageInfo) {
+        return pageInfo != null && pageInfo.get(PAGE_NUM) != null;
+    }
+
+    /**
+     * 重置表及相关参数
+     *
+     * @param obj      Object
+     * @param pageInfo Map
+     */
+    @SuppressWarnings("unchecked")
+    private void resetPageInfo(Object obj, Map<String, Object> pageInfo) {
+        if (obj instanceof Map) {
+            ((Map) obj).remove(PAGE);
+        }
+
+        if (pageInfo != null) {
+            Map<String, Object> page = (Map) pageInfo.remove(PAGE);
+            if (page != null) {
+                pageInfo.putAll(page);
+            }
+
+            if (isFalsePage(obj)) {
+                removePageInfos(pageInfo);
+            }
+        }
     }
 
     /**
      * 设置分页相关信息
      *
-     * @param arc Object
+     * @param src Object
      * @param obj Object
      * @return Map
-     * @throws Throwable
+     * @throws Throwable Throwable
      */
-    private Map setPageInfo(Object arc, Object obj) throws Throwable {
-        Map pageInfo;
-        if (obj instanceof String
-                || obj instanceof Double
-                || obj instanceof Float
-                || obj instanceof Long
-                || obj instanceof Integer
-                || obj instanceof Character
-                || obj instanceof Boolean
-                || obj instanceof Short
-                || obj instanceof Byte) { // String 及包装类型返回 null
-            return null;
-        }
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> handlePageInfo(Object src, Object obj) throws Throwable {
         // 参数为 Map 类型
+        Map<String, Object> pageInfo;
         if (obj instanceof Map) {
-            pageInfo = new HashMap((Map) obj);
-            PageInfo.getInstance(pageInfo, arc);
-            Map page = (Map) pageInfo.remove("page");
-            if (page != null) {
-                pageInfo.putAll(page);
-            }
-            if (PageInfo.isFalsePage(obj)) {
-                removePageInfos(pageInfo);
-            }
-            pageInfo.put("dataList", arc);
+            pageInfo = getInstance(new HashMap((Map) obj), src);
+            resetPageInfo(obj, pageInfo);
+            pageInfo.put(DATA_LIST, src);
         } else { // 参数为其它 Bean
             try {
-                pageInfo = (Map) ReflectHelper.getValueByFieldName(obj, "page");
-            } catch (Exception e) {
-                throw new Throwable("POJO 缺少必要的 Map page 属性");
+                pageInfo = (Map) ReflectHelper.getFieldValue(obj, PAGE);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("POJO 缺少必要的 Map page 属性");
             }
-            if (null == pageInfo) {
-                pageInfo = new HashMap(7);
-            }
-            PageInfo.getInstance(pageInfo, arc);
-            ReflectHelper.setValueByFieldName(obj, "page", pageInfo);
+
+            getInstance(pageInfo == null ? new HashMap() : pageInfo, src);
+            resetPageInfo(obj, pageInfo);
+            ReflectHelper.setFieldValue(obj, PAGE, pageInfo);
         }
+
         return pageInfo;
     }
 }
