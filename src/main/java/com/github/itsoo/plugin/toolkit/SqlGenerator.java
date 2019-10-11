@@ -42,7 +42,7 @@ public class SqlGenerator {
                 return String.format("%s LIMIT %d, %d", sql, startRows, pageSize);
             } else if (PageUtils.isEquals(Dialect.ORACLE, dialect)) {
                 String pageSql =
-                        "SELECT * FROM (SELECT tmp_page.*, rownum row_num FROM (%s) tmp_page) WHERE row_num > %d AND row_num <= %d";
+                        "SELECT * FROM (SELECT tmp_0.*, rownum rn FROM (%s) tmp_0) WHERE rn > %d AND rn <= %d";
 
                 return String.format(pageSql, sql, startRows, getEndRows(pageInfo));
             }
