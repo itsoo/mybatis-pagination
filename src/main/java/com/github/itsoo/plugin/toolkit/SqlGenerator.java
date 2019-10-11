@@ -19,7 +19,7 @@ public class SqlGenerator {
      * @return count sql
      */
     public static String generateCountSql(String sql) {
-        return String.format("SELECT count(*) FROM (%s) tmp_count", sql);
+        return String.format("SELECT count(*) FROM (%s) tmp_0", sql);
     }
 
     /**
