@@ -157,11 +157,11 @@ public final class PageInfo {
     }
 
     private static void setTotalPage(Map<String, Object> map) {
-        Object tcObj = map.get(TOTAL_COUNT);
-        Object psObj = map.get(PAGE_SIZE);
-        if (!isEmpty(tcObj) && !isEmpty(psObj)) {
-            int totalCount = toNumber(tcObj);
-            int pageSize = toNumber(psObj);
+        Object oTotalCount = map.get(TOTAL_COUNT);
+        Object oPageSize = map.get(PAGE_SIZE);
+        if (!isEmpty(oTotalCount) && !isEmpty(oPageSize)) {
+            int totalCount = toNumber(oTotalCount);
+            int pageSize = toNumber(oPageSize);
             map.put(TOTAL_PAGE, (int) Math.ceil(((double) totalCount) / pageSize));
 
             return;
