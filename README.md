@@ -2,7 +2,7 @@
 
 ### 一、简介
 
-此组件适用于以 MyBatis 为持久层，为增强 MyBatis 的 SQL 查询使用。入参支持 Map 类型和自定义 POJO 类（必要的属性为 Map page，该属性用于提供分页数据的封装）。此组件致力于更少的代码侵入，更方便的、灵活的配置。适合于 Maven 开发的 MyBatis 工程使用
+此组件适用于以 Mybatis 为持久层，为增强 Mybatis 的 SQL 查询使用。入参支持 Map 类型和自定义 POJO 类（必要的属性为 Map page，该属性用于提供分页数据的封装）。此组件致力于更少的代码侵入，更方便的、灵活的配置。适合于 Maven 开发的 Mybatis 工程使用
 
 ### 二、优点
 
@@ -11,7 +11,7 @@
 * 业务逻辑方法前加入 @Page 注解即可得到封装好的 Map 类型的 page（请注意 Service 层的返回值为 Object 类型）
 * 不加入 @Page 注解的可得到物理分页后的集合数据（List 类型返回值）
 
-> 原理：插件通过实现 MyBatis 的 Interceptor 拦截，来实现物理分页 SQL 的组织。并通过注解来拦截方法入参和返回值，业务处理后改写方法返回值（封装的 PageInfo 类型），PageInfo 中主要属性：pageNum、pageSize、totalPage、totalCount、dataList、hasPrePage、hasNextPage
+> 原理：插件通过实现 Mybatis 的 Interceptor 拦截，来实现物理分页 SQL 的组织。并通过注解来拦截方法入参和返回值，业务处理后改写方法返回值（封装的 PageInfo 类型），PageInfo 中主要属性：pageNum、pageSize、totalPage、totalCount、dataList、hasPrePage、hasNextPage
 
 ### 一、先决条件
 
@@ -104,7 +104,7 @@ public Object query(Map<String, Object> param) {
 > 简单理解为以下几步
 
 * 引入依赖
-* 加入 MyBatis 的配置
+* 加入 Mybatis 的配置
 * 引用 ListPage 进行分页查询（Mapper 文件 sql 的 id 中）
 
 该插件目前适用于关联查询等普通操作，暂未支持特殊查询操作：如 for update 操作（毕竟for update的SQL需要重视）、MySQL 的后置 group by（MySQL 的问题，可自行搜索）等
