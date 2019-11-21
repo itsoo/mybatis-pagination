@@ -41,7 +41,7 @@
 
 ### 四、使用方法
 
-1. 确保你的工程为 Maven 工程，且集成了 Spring 和 MyBatis
+1. 确保你的工程为 Maven 工程，且集成了 Spring 和 Mybatis
 2. 在你的工程 lib 中加入 source 下的 jar 包
 3. 在 pom.xml 中加入引用 jar 配置（当然你也可以编译后打 jar 包直接引入）：
 
