@@ -84,7 +84,8 @@ public class PagePlugin implements Interceptor {
                     Map<String, Object> pageInfo = handlePageInfo(param, count);
 
                     int pageSize = (int) pageInfo.get(PAGE_SIZE);
-                    Map<String, Object> condition = count <= pageSize ? null : pageInfo;
+                    int pageNum = (int) pageInfo.get(PAGE_NUM);
+                    Map<String, Object> condition = (count <= pageSize && pageNum == 1) ? null : pageInfo;
 
                     String pageSql = SqlGenerator.generatePageSql(dialect, boundSql.getSql(), condition);
                     ReflectHelper.setFieldValue(boundSql, "sql", pageSql);

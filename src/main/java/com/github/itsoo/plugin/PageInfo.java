@@ -137,13 +137,11 @@ public final class PageInfo {
         setTotalPage(map);
 
         Object oPageNum = map.get(PAGE_NUM);
-        Object oTotalPage = map.get(TOTAL_PAGE);
         if (isEmpty(oPageNum)) {
             map.put(PAGE_NUM, 1);
         } else {
             int pageNum = toNumber(oPageNum);
-            int totalPage = toNumber(oTotalPage);
-            map.put(PAGE_NUM, Math.min(Math.max(1, pageNum), totalPage));
+            map.put(PAGE_NUM, pageNum);
         }
     }
 
