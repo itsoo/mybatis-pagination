@@ -1,9 +1,11 @@
 package com.github.itsoo.plugin;
 
-import com.github.itsoo.plugin.util.PageUtil;
+import com.github.itsoo.plugin.toolkit.ReflectHelper;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.github.itsoo.plugin.toolkit.PageUtils.*;
 
 /**
  * 结果页
@@ -12,70 +14,58 @@ import java.util.Map;
  */
 public final class PageInfo {
 
-    /**
-     * 私有的构造
-     */
-    private PageInfo() {
-        super();
-    }
+    public static final String PAGE_LIST = "pageList";        // 分页属性 "false" 不分页
+    public static final String PAGE = "page";                 // 封装 page 属性
+    public static final String PAGE_NUM = "pageNum";          // 当前页数
+    public static final String PAGE_SIZE = "pageSize";        // 页容量
+    public static final String TOTAL_PAGE = "totalPage";      // 总页数
+    public static final String TOTAL_COUNT = "totalCount";    // 总记录数
+    public static final String DATA_LIST = "dataList";        // 查询结果集
+    public static final String HAS_PRE_PAGE = "hasPrePage";   // 有上一页
+    public static final String HAS_NEXT_PAGE = "hasNextPage"; // 有下一页
+
+    static final String DIALECT = "dialect";                  // 数据库方言
+    static final String REGEXP = "regexp";                    // 拦截器正则
+    static Integer defaultPageSize = 10;                      // 默认页容量
 
     /**
-     * 实例化方法
-     *
-     * @return Map
+     * 方言枚举
      */
-    public static Map getInstance() {
-        Map<String, Object> map = new HashMap<>(7);
-        // 当前页数
-        map.put("pageNum", 1);
-        // 每页条目数
-        map.put("pageSize", PageUtil.pageSize);
-        // 总页数
-        map.put("totalPage", 0);
-        // 总记录数
-        map.put("totalCount", 0);
-        // 查询结果集
-        map.put("dataList", null);
-        // 有上一页
-        map.put("hasPrePage", false);
-        // 有下一页
-        map.put("hasNextPage", false);
+    public interface Dialect {
+        String MYSQL = "mysql";
+        String ORACLE = "oracle";
+    }
+
+    private PageInfo() {}
+
+    public static Map<String, Object> getInstance() {
+        Map<String, Object> map = new HashMap<>();
+        map.put(PAGE_NUM, 1);
+        map.put(PAGE_SIZE, defaultPageSize);
+        map.put(TOTAL_PAGE, 0);
+        map.put(TOTAL_COUNT, 0);
+        map.put(DATA_LIST, null);
+        map.put(HAS_PRE_PAGE, false);
+        map.put(HAS_NEXT_PAGE, false);
+
         return map;
     }
 
-    /**
-     * 实例化方法
-     *
-     * @param map Map
-     * @return Map
-     */
-    public static Map getInstance(Map map) {
-        // 结果页
+    public static Map<String, Object> getInstance(Map<String, Object> map) {
         setPageInfo(map);
-        // 当前页数
         setPageNum(map);
-        // 每页条目数
         setPageSize(map);
-        // 查询结果集
-        map.put("dataList", null);
-        // 有上一页
+        map.put(DATA_LIST, null);
         setHasPrePage(map);
-        // 有下一页
         setHasNextPage(map);
+
         return map;
     }
 
-    /**
-     * 实例化方法
-     *
-     * @param map      Map
-     * @param dataList Object
-     * @return Map
-     */
-    public static Map getInstance(Map map, Object dataList) {
+    public static Map<String, Object> getInstance(Map<String, Object> map, Object dataList) {
         getInstance(map);
-        // 查询结果集
-        map.put("dataList", dataList);
+        map.put(DATA_LIST, dataList);
+
         return map;
     }
 
@@ -84,10 +74,8 @@ public final class PageInfo {
      *
      * @return int
      */
-    public static int getStartRows(Map map) {
-        int pageNum = Integer.parseInt(map.get("pageNum").toString());
-        int pageSize = Integer.parseInt(map.get("pageSize").toString());
-        return (pageNum - 1) * pageSize;
+    public static int getStartRows(Map<String, Object> map) {
+        return (getNumber(map, PAGE_NUM) - 1) * getNumber(map, PAGE_SIZE);
     }
 
     /**
@@ -95,111 +83,98 @@ public final class PageInfo {
      *
      * @return int
      */
-    public static int getEndRows(Map map) {
-        int pageNum = Integer.parseInt(map.get("pageNum").toString());
-        int pageSize = Integer.parseInt(map.get("pageSize").toString());
-        return pageNum * pageSize;
+    public static int getEndRows(Map<String, Object> map) {
+        return getNumber(map, PAGE_NUM) * getNumber(map, PAGE_SIZE);
     }
 
     /**
-     * 钩子方法判断是否需要分页
+     * 不分页
      *
      * @param obj Object
      * @return boolean
      */
     public static boolean isFalsePage(Object obj) {
         if (obj instanceof Map) {
-            Object pageList = ((Map) obj).get("pageList");
-            if (null != pageList && "false".equals(pageList.toString())) {
-                return true;
-            }
-        } else {
-            Object pageList = null;
-            try {
-                pageList = ReflectHelper.getValueByFieldName(obj, "pageList");
-            } catch (Exception e) {
-                try {
-                    Map map = (Map) ReflectHelper.getValueByFieldName(obj, "page");
-                    pageList = map.get("pageList");
-                } catch (Exception ex) {
-                    System.err.println(ex.getMessage());
-                }
-            }
-            if (null != pageList && "false".equals(pageList.toString())) {
-                return true;
-            }
+            return isFalseValue(((Map) obj).get(PAGE_LIST));
         }
+
+        try {
+            return isFalseValue(ReflectHelper.getFieldValue(obj, PAGE_LIST));
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            try {
+                Map map = (Map) ReflectHelper.getFieldValue(obj, PAGE);
+                if (map != null) {
+                    return isFalseValue(map.get(PAGE_LIST));
+                }
+            } catch (Exception ignore) {}
+        }
+
         return false;
     }
 
-    /**
-     * SETTER METHOD
-     */
-    private static void setPageInfo(Map map) {
-        String[] keys = {"pageNum", "pageSize", "totalPage", "totalCount", "dataList", "hasPrePage", "hasNextPage"};
+    private static void setPageInfo(Map<String, Object> map) {
+        String[] keys = {PAGE_NUM, PAGE_SIZE, TOTAL_PAGE, TOTAL_COUNT, DATA_LIST, HAS_PRE_PAGE, HAS_NEXT_PAGE};
         Object[] objs = new Object[keys.length];
         for (int i = 0; i < keys.length; i++) {
             objs[i] = map.get(keys[i]);
         }
+
         map.putAll(getInstance());
+
         // 原值转换
         for (int i = 0; i < objs.length; i++) {
-            setMapKeyValue(map, keys[i], objs[i]);
+            setKeyAndValueOfMap(map, keys[i], objs[i]);
         }
     }
 
-    private static void setMapKeyValue(Map map, String key, Object value) {
-        if (null != value && !"".equals(value)) {
+    private static void setKeyAndValueOfMap(Map<String, Object> map, String key, Object value) {
+        if (!isEmpty(value)) {
             map.put(key, value);
         }
     }
 
-    private static void setPageNum(Map map) {
-        // 总页数
+    private static void setPageNum(Map<String, Object> map) {
         setTotalPage(map);
-        Object pageNum = map.get("pageNum");
-        Object totalPage = map.get("totalPage");
-        if (null == pageNum || "".equals(pageNum)) {
-            pageNum = 1;
+
+        Object oPageNum = map.get(PAGE_NUM);
+        Object oTotalPage = map.get(TOTAL_PAGE);
+        if (isEmpty(oPageNum)) {
+            map.put(PAGE_NUM, 1);
         } else {
-            int pn = Integer.parseInt(pageNum.toString());
-            int tp = Integer.parseInt(totalPage.toString());
-            pageNum = Math.min(Math.max(1, pn), tp);
+            int pageNum = toNumber(oPageNum);
+            int totalPage = toNumber(oTotalPage);
+            map.put(PAGE_NUM, Math.min(Math.max(1, pageNum), totalPage));
         }
-        map.put("pageNum", pageNum);
     }
 
-    private static void setPageSize(Map map) {
-        Object pageSize = map.get("pageSize");
-        if (null == pageSize || "".equals(pageSize)) {
-            map.put("pageSize", PageUtil.pageSize);
+    private static void setPageSize(Map<String, Object> map) {
+        Object pageSize = map.get(PAGE_SIZE);
+        if (isEmpty(pageSize)) {
+            map.put(PAGE_SIZE, defaultPageSize);
         } else {
-            map.put("pageSize", Integer.parseInt(pageSize.toString()));
+            map.put(PAGE_SIZE, toNumber(pageSize));
         }
     }
 
-    private static void setTotalPage(Map map) {
-        Object tcObj = map.get("totalCount");
-        Object psObj = map.get("pageSize");
-        int totalPage = 1;
-        if (null != tcObj && !"".equals(tcObj)) {
-            if (null != psObj && !"".equals(psObj)) {
-                int totalCount = Integer.parseInt(tcObj.toString());
-                int pageSize = Integer.parseInt(psObj.toString());
-                totalPage = (int) Math.ceil(((double) totalCount) / pageSize);
-            }
+    private static void setTotalPage(Map<String, Object> map) {
+        Object oTotalCount = map.get(TOTAL_COUNT);
+        Object oPageSize = map.get(PAGE_SIZE);
+        if (!isEmpty(oTotalCount) && !isEmpty(oPageSize)) {
+            int totalCount = toNumber(oTotalCount);
+            int pageSize = toNumber(oPageSize);
+            map.put(TOTAL_PAGE, (int) Math.ceil(((double) totalCount) / pageSize));
+
+            return;
         }
-        map.put("totalPage", totalPage);
+
+        map.put(TOTAL_PAGE, 1);
     }
 
-    private static void setHasPrePage(Map map) {
-        int pageNum = Integer.parseInt(map.get("pageNum").toString());
-        map.put("hasPrePage", pageNum > 1);
+    private static void setHasPrePage(Map<String, Object> map) {
+        map.put(HAS_PRE_PAGE, getNumber(map, PAGE_NUM) > 1);
     }
 
-    private static void setHasNextPage(Map map) {
-        int pageNum = Integer.parseInt(map.get("pageNum").toString());
-        int totalPage = Integer.parseInt(map.get("totalPage").toString());
-        map.put("hasNextPage", pageNum < totalPage);
+    private static void setHasNextPage(Map<String, Object> map) {
+        map.put(HAS_NEXT_PAGE, getNumber(map, PAGE_NUM) < getNumber(map, TOTAL_PAGE));
     }
 }

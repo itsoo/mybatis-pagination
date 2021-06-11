@@ -7,10 +7,7 @@ import java.lang.annotation.*;
  *
  * @author zxy
  */
-@Target({ElementType.METHOD})
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Page {
-
-    String description() default "分页注解";
-}
+public @interface Page {}
